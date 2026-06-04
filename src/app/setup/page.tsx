@@ -12,6 +12,18 @@ import type { Goal } from "@/types";
 const GOAL_ICONS = ["🌊", "🏄", "❤️", "🧘", "🎯", "💪", "🌱", "✨", "🎬", "🤝", "📱", "🥗", "🏋️", "🌍", "🔥"];
 const CATEGORIES = ["Coaching", "Personal", "Health", "Creative", "Connection", "Work", "Surf", "Growth"];
 
+const SEASON_ICONS = ["🌊", "🏄", "🌅", "🌴", "🔥", "🌿", "⚡", "🌙", "☀️", "🌺", "🎯", "✨"];
+const SEASON_COLORS = [
+  { hex: "#F59E0B", name: "Amber" },
+  { hex: "#F97316", name: "Coral" },
+  { hex: "#EF4444", name: "Fire" },
+  { hex: "#EC4899", name: "Rose" },
+  { hex: "#8B5CF6", name: "Violet" },
+  { hex: "#3B82F6", name: "Ocean" },
+  { hex: "#14B8A6", name: "Teal" },
+  { hex: "#22C55E", name: "Forest" },
+];
+
 function newGoal(): Goal {
   return {
     id: crypto.randomUUID(),
@@ -28,6 +40,8 @@ export default function SetupPage() {
   const router = useRouter();
   const [seasonName, setSeasonName] = useState("");
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
+  const [seasonIcon, setSeasonIcon] = useState("🌊");
+  const [seasonColor, setSeasonColor] = useState("#F59E0B");
   const [goals, setGoals] = useState<Goal[]>([newGoal()]);
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState<"season" | "goals">("season");
@@ -45,7 +59,7 @@ export default function SetupPage() {
     setSaving(true);
     const { data, error } = await supabase
       .from("seasons")
-      .insert({ name: seasonName.trim(), start_date: startDate, goals })
+      .insert({ name: seasonName.trim(), start_date: startDate, goals, color: seasonColor, icon: seasonIcon })
       .select()
       .single();
     if (error) { console.error(error); setSaving(false); return; }
@@ -66,6 +80,64 @@ export default function SetupPage() {
       <div className="flex-1 overflow-y-auto px-6 py-8">
         {step === "season" ? (
           <div className="space-y-8 max-w-sm">
+            {/* Season icon */}
+            <div className="space-y-3">
+              <Label className="text-white/50 text-xs tracking-widest uppercase">Season icon</Label>
+              <div className="flex flex-wrap gap-2">
+                {SEASON_ICONS.map((ic) => (
+                  <button
+                    key={ic}
+                    onClick={() => setSeasonIcon(ic)}
+                    className={`w-10 h-10 rounded-full text-xl flex items-center justify-center transition-all ${
+                      seasonIcon === ic ? "ring-2 scale-110" : "hover:bg-white/10"
+                    }`}
+                    style={seasonIcon === ic ? {
+                      background: `${seasonColor}20`,
+                      boxShadow: `0 0 0 2px ${seasonColor}60`,
+                    } : {}}
+                  >
+                    {ic}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Season color */}
+            <div className="space-y-3">
+              <Label className="text-white/50 text-xs tracking-widest uppercase">Season color</Label>
+              <div className="flex gap-3 flex-wrap">
+                {SEASON_COLORS.map((c) => (
+                  <button
+                    key={c.hex}
+                    onClick={() => setSeasonColor(c.hex)}
+                    className="w-8 h-8 rounded-full transition-all hover:scale-110"
+                    style={{
+                      background: c.hex,
+                      boxShadow: seasonColor === c.hex
+                        ? `0 0 0 2px rgba(0,0,0,1), 0 0 0 4px ${c.hex}, 0 0 12px ${c.hex}80`
+                        : "none",
+                      transform: seasonColor === c.hex ? "scale(1.2)" : undefined,
+                    }}
+                    aria-label={c.name}
+                  />
+                ))}
+              </div>
+              {/* Color preview on icon */}
+              <div className="flex items-center gap-3 pt-1">
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-2xl"
+                  style={{
+                    background: `radial-gradient(circle, ${seasonColor}40 0%, ${seasonColor}10 100%)`,
+                    boxShadow: `0 0 20px ${seasonColor}50`,
+                    border: `1px solid ${seasonColor}40`,
+                  }}
+                >
+                  {seasonIcon}
+                </div>
+                <p className="text-white/30 text-xs">This is how your season button will look</p>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label className="text-white/50 text-xs tracking-widest uppercase">Season name</Label>
               <Input
@@ -76,6 +148,7 @@ export default function SetupPage() {
                 autoFocus
               />
             </div>
+
             <div className="space-y-2">
               <Label className="text-white/50 text-xs tracking-widest uppercase">Starts</Label>
               <Input
@@ -85,10 +158,12 @@ export default function SetupPage() {
                 className="bg-transparent border-white/20 text-white focus-visible:ring-white/30 h-12 [color-scheme:dark]"
               />
             </div>
+
             <Button
               onClick={() => setStep("goals")}
               disabled={!seasonName.trim()}
-              className="w-full h-12 bg-white text-black hover:bg-white/90 rounded-sm font-medium tracking-wide mt-4"
+              className="w-full h-12 rounded-sm font-medium tracking-wide mt-4 border-0"
+              style={{ background: seasonColor, color: "#000" }}
             >
               Continue <ChevronRight size={16} className="ml-1" />
             </Button>
@@ -100,7 +175,7 @@ export default function SetupPage() {
             </p>
 
             {goals.map((goal, i) => (
-              <div key={goal.id} className="border border-white/10 rounded-lg p-4 space-y-4 bg-white/2">
+              <div key={goal.id} className="border border-white/10 rounded-lg p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-white/30 text-xs tracking-widest">INTENTION {i + 1}</span>
                   {goals.length > 1 && (
@@ -189,7 +264,8 @@ export default function SetupPage() {
           <Button
             onClick={handleSave}
             disabled={saving || !goals.every((g) => g.title.trim())}
-            className="w-full h-12 bg-white text-black hover:bg-white/90 rounded-sm font-medium tracking-wide"
+            className="w-full h-12 rounded-sm font-medium tracking-wide border-0"
+            style={{ background: seasonColor, color: "#000", opacity: saving || !goals.every((g) => g.title.trim()) ? 0.4 : 1 }}
           >
             {saving ? "Creating your season…" : "Begin the season"}
           </Button>

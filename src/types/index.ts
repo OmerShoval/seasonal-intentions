@@ -14,6 +14,8 @@ export interface Season {
   start_date: string;
   end_date?: string;
   goals: Goal[];
+  color: string;
+  icon: string;
   created_at: string;
 }
 

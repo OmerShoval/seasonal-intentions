@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { Sun, Moon, Settings } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import RadialOrbitalTimeline from "@/components/ui/radial-orbital-timeline";
+import { GlassFilter } from "@/components/ui/glass-effect";
+import SeasonLibrary from "@/components/season-library";
 import type { Season, DailyEntry, Goal } from "@/types";
 
 function todayISO() {
@@ -15,6 +17,7 @@ export default function Home() {
   const [season, setSeason] = useState<Season | null>(null);
   const [entry, setEntry] = useState<DailyEntry | null>(null);
   const [loading, setLoading] = useState(true);
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   const load = useCallback(async () => {
     const seasonId = localStorage.getItem("active_season_id");
@@ -47,12 +50,14 @@ export default function Home() {
 
   const morningDone = !!entry?.morning_completed_at;
   const eveningDone = !!entry?.evening_completed_at;
-
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const seasonColor = season?.color ?? "#F59E0B";
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
+      <GlassFilter />
+
       {/* Header */}
       <div className="px-6 pt-12 pb-4 flex items-start justify-between">
         <div>
@@ -115,6 +120,30 @@ export default function Home() {
           />
         )}
       </div>
+
+      {/* Floating Season Library button */}
+      <button
+        onClick={() => setLibraryOpen(true)}
+        className="fixed bottom-8 right-6 z-30 w-14 h-14 rounded-full flex items-center justify-center text-2xl transition-all duration-300 hover:scale-110 active:scale-95"
+        style={{
+          background: `radial-gradient(circle at 40% 35%, ${seasonColor}60, ${seasonColor}20)`,
+          border: `1px solid ${seasonColor}50`,
+          boxShadow: `0 0 24px ${seasonColor}50, 0 4px 16px rgba(0,0,0,0.4), inset 1px 1px 1px rgba(255,255,255,0.2)`,
+          backdropFilter: "blur(12px)",
+          transitionTimingFunction: "cubic-bezier(0.175, 0.885, 0.32, 2.2)",
+        }}
+        aria-label="Season Library"
+      >
+        {season?.icon ?? "🌊"}
+      </button>
+
+      {/* Season Library */}
+      <SeasonLibrary
+        open={libraryOpen}
+        currentSeasonId={season?.id ?? ""}
+        onClose={() => setLibraryOpen(false)}
+        onSwitch={(s) => setSeason(s)}
+      />
     </div>
   );
 }
